@@ -1,3 +1,5 @@
+import qualified Data.Map as Map
+
 data Token = IntToken Int
            | ValueToken String
            | ParenthesisBeginToken
@@ -29,6 +31,14 @@ data Expression = AddExpression Term Expression
                 | SimpleExpression Term
   deriving (Show)
 
+data AST = SimpleNode AST
+         | AddNode AST AST
+         | SubNode AST AST
+         | MulNode AST AST
+         | DivNode AST AST
+         | IntValueNode Int
+  deriving (Show)
+
 
 tokenize [] = []
 tokenize ("(":xs)  = ParenthesisBeginToken:tokenize(xs)
@@ -52,32 +62,62 @@ tokenizePrimaryToken (ParenthesisBeginToken:ts) = (PrimaryToken inner):(tokenize
 tokenizePrimaryToken (t:[]) = [t]
 tokenizePrimaryToken (t:ts) = t:(tokenizePrimaryToken ts)
 
-parseExpression :: [Token] -> Expression
+parseExpression :: [Token] -> AST
 parseExpression vs
-  | not $ avr == [] = case x of AddOpToken -> AddExpression (parseTerm avl) $ parseExpression navr
-                                SubOpToken -> SubExpression (parseTerm avl) $ parseExpression navr
-  | otherwise = SimpleExpression $ parseTerm vs
+  | not $ avr == [] = case x of AddOpToken -> AddNode (parseTerm avl) $ parseExpression navr
+                                SubOpToken -> SubNode (parseTerm avl) $ parseExpression navr
+  | otherwise = parseTerm vs
   where (avl, avr) = break (\x -> AddOpToken == x || SubOpToken == x) vs
         x:navr = avr
 
-parseTerm :: [Token] -> Term
+parseTerm :: [Token] -> AST
 parseTerm ts
-  | not $ avr == [] = case x of MulOpToken -> MulTerm (parsePrimaryExpression avl) $ parseTerm navr
-                                SubOpToken -> DivTerm (parsePrimaryExpression avl) $ parseTerm navr
-  | otherwise = SimpleTerm $ parsePrimaryExpression ts
+  | not $ avr == [] = case x of MulOpToken -> MulNode (parsePrimaryExpression avl) $ parseTerm navr
+                                SubOpToken -> DivNode (parsePrimaryExpression avl) $ parseTerm navr
+  | otherwise = parsePrimaryExpression ts
   where (avl, avr) = break (\x -> MulOpToken == x || DivOpToken == x) ts
         x:navr = avr
 
-parsePrimaryExpression :: [Token] -> PrimaryExpression
-parsePrimaryExpression [IntToken x] = PrimaryInt x
-parsePrimaryExpression [PrimaryToken x] = PrimaryParenthesis $ parseExpression x
+parsePrimaryExpression :: [Token] -> AST
+parsePrimaryExpression [IntToken x] = IntValueNode x
+parsePrimaryExpression [PrimaryToken x] = parseExpression x
 parsePrimaryExpression _ = error "Parse Error"
+
 
 type Environment = Map.Map String Expression
 
-evalExpression :: Environment -> Expression -> (Environment, 
-evalExpression _ (SimpleExpression SimpleTerm PrimaryInt x)
+evalAST env (IntValueNode x) = do
+  return (env, IntValueNode x)
 
+evalAST env (AddNode l r) = do
+  (envl, IntValueNode lv) <- evalAST env  l
+  (envr, IntValueNode rv) <- evalAST envl r
+  return (envr, IntValueNode (lv + rv))
+
+evalAST env (SubNode l r) = do
+  (envl, IntValueNode lv) <- evalAST env  l
+  (envr, IntValueNode rv) <- evalAST envl r
+  return (envr, IntValueNode $ lv - rv)
+
+evalAST env (MulNode l r) = do
+  (envl, IntValueNode lv) <- evalAST env  l
+  (envr, IntValueNode rv) <- evalAST envl r
+  return (envr, IntValueNode $ lv * rv)
+
+evalAST env (DivNode l r) = do
+  (envl, IntValueNode lv) <- evalAST env  l
+  (envr, IntValueNode rv) <- evalAST envl r
+  return (envr, IntValueNode $ div lv rv)
+
+evalAST env (SimpleNode l) = do
+  x <- evalAST env l
+  return x
+
+
+parse :: String -> AST
 parse xs = parseExpression $ tokenizePrimaryToken $ tokenize $ words xs
 
 check xs = tokenizePrimaryToken $ tokenize $ words xs
+
+eval xs = do
+  evalAST (Map.fromList []) $ parse xs
