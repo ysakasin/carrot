@@ -32,10 +32,14 @@ data AST = SimpleNode AST
          | IntValueNode Int
          | IdentNode String
          | CompoundNode [AST]
+         | DefineFunctionNode String [String] AST
+         | FunctionNode String [String] AST
+         | EmptyNode
+         | CallNode String [AST]
   deriving (Show)
 
 tokenizePrimaryToken :: [Token] -> [Token]
-tokenizePrimaryToken (ParenthesisBeginToken:ts) = (PrimaryToken inner):(tokenizePrimaryToken outer)
+tokenizePrimaryToken (ParenthesisBeginToken:ts) = (ParenthesisToken inner):(tokenizePrimaryToken outer)
   where (inner, outer) = searchPEndToken(ts)
 tokenizePrimaryToken [] = []
 tokenizePrimaryToken (t:ts) = t:(tokenizePrimaryToken ts)
@@ -48,16 +52,26 @@ searchPEndToken (ParenthesisBeginToken:ts) = searchPEndToken tokens
 searchPEndToken (t:ts) = (t:token, beforeToken)
   where (token, beforeToken) = searchPEndToken(ts)
 
-parseStatements :: [Token] -> AST
-parseStatements [] = CompoundNode []
-parseStatements ts = CompoundNode (ast:asts)
-  where (stmt, NewLineToken:stmts) = break (NewLineToken ==) ts
-        ast = parseStatement stmt
-        CompoundNode asts = parseStatements stmts
+parseStatements :: [Token] -> (AST, [Token])
+parseStatements [] = (CompoundNode [], [])
+parseStatements (KeywordEndToken:ts) = (CompoundNode [], ts)
+parseStatements ts = (CompoundNode $ ast:asts, afterTs)
+  where (ast, after) = parseStatement [] ts
+        (CompoundNode asts, afterTs) = parseStatements after
 
-parseStatement :: [Token] -> AST
-parseStatement ts = parseExpression expr
-    where expr = ts
+parseStatement :: [Token] -> [Token] -> (AST, [Token])
+parseStatement token (NewLineToken:ts) = (exprAST, ts)
+  where exprAST = parseExpression $ reverse token
+parseStatement [] (KeywordDefToken:ts) = (DefineFunctionNode name args stmtsAST, afterTs)
+  where IdentToken name:ParenthesisToken argTokens:NewLineToken:stmt = ts
+        args = getArgs argTokens
+        (stmtsAST, afterTs) = parseStatements stmt
+parseStatement token (t:ts) = parseStatement (t:token) ts
+
+getArgs :: [Token] -> [String]
+getArgs [] = []
+getArgs [IdentToken x] = [x]
+getArgs ((IdentToken x):CommaToken:ts) = x:(getArgs ts)
 
 parseExpression :: [Token] -> AST
 parseExpression ((IdentToken x):AssignOpToken:ts) = AssignNode (IdentNode x) $ parseExpression ts
@@ -82,9 +96,18 @@ parseTerm ts
 
 parsePrimaryExpression :: [Token] -> AST
 parsePrimaryExpression [IntToken x] = IntValueNode x
+parsePrimaryExpression (IdentToken x:ParenthesisToken y:[]) = CallNode x paramsAST
+  where paramsAST = getParams y
 parsePrimaryExpression [IdentToken x] = IdentNode x
-parsePrimaryExpression [PrimaryToken x] = parseExpression x
+parsePrimaryExpression [ParenthesisToken x] = parseExpression x
+parsePrimaryExpression [] = EmptyNode
 parsePrimaryExpression _ = error "Parse Error"
 
+getParams :: [Token] -> [AST]
+getParams [] = []
+getParams [x] = [parseExpression [x]]
+getParams (x:CommaToken:ts) = (parseExpression [x]):(getParams ts)
+
 parse :: String -> AST
-parse xs = parseStatements $ tokenizePrimaryToken $ tokenize xs
+parse xs = ast
+  where (ast, []) = parseStatements $ tokenizePrimaryToken $ tokenize xs

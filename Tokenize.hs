@@ -23,9 +23,8 @@ data Token = IntToken Int
            | SpaceToken
            | EmptyToken
            | NewLineToken
-           | FunctionToken String
            | ArgsToken [String]
-           | PrimaryToken [Token]
+           | ParenthesisToken [Token]
   deriving (Show, Eq)
 
 tokenize :: String -> [Token]
@@ -40,6 +39,9 @@ tokenize ('-':xs)  = SubOpToken:tokenize(xs)
 tokenize ('*':xs)  = MulOpToken:tokenize(xs)
 tokenize ('/':xs)  = DivOpToken:tokenize(xs)
 tokenize (',':xs)  = CommaToken:tokenize(xs)
+tokenize ('d':'e':'f':xs) = KeywordDefToken:tokenize(xs)
+tokenize ('d':'o':xs)     = KeywordDoToken:tokenize(xs)
+tokenize ('e':'n':'d':xs) = KeywordEndToken:tokenize(xs)
 tokenize (' ':xs)  = tokenize(xs)
 tokenize xxs@(x:_)
   | isDigit x = IntToken (read intString::Int):tokenize(beforeDigit)
