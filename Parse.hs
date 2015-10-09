@@ -39,6 +39,7 @@ data AST = SimpleNode AST
          | IfNode AST AST AST
          | EmptyNode
          | CallNode String [AST]
+         | ReturnNode AST
   deriving (Show)
 
 tokenizePrimaryToken :: [Token] -> [Token]
@@ -75,6 +76,9 @@ parseStatement [] (KeywordIfToken:ts) = (IfNode conditionAST stmtsAST EmptyNode,
   where (conditionExpr, KeywordThenToken:afterTs) = break (\x -> KeywordThenToken == x || NewLineToken == x) ts
         conditionAST = parseExpression conditionExpr
         (stmtsAST, afterIf) = parseStatements afterTs
+parseStatement [] (ReturnToken:ts) = (ReturnNode ast, after)
+  where ast = parseExpression r
+        (r, after) = break (NewLineToken ==) ts
 parseStatement token (t:ts) = parseStatement (t:token) ts
 
 getArgs :: [Token] -> [String]
@@ -115,8 +119,9 @@ parsePrimaryExpression _ = error "Parse Error"
 
 getParams :: [Token] -> [AST]
 getParams [] = []
-getParams [x] = [parseExpression [x]]
-getParams (x:CommaToken:ts) = (parseExpression [x]):(getParams ts)
+getParams ts = if xs == [] then [parseExpression x] else (parseExpression x):(getParams xs)
+  where (x, xs) = break (CommaToken ==) ts
+        CommaToken:xss = xs
 
 parse :: String -> AST
 parse xs = ast

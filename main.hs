@@ -8,9 +8,15 @@ evalAST env (CompoundNode (x:[])) = do
   a <- evalAST env x
   return a
 
+evalAST env (CompoundNode ((ReturnNode n):xs)) = do
+  (enva, a) <- evalAST env n
+  return (enva, ReturnNode a)
+
 evalAST env (CompoundNode (x:xs)) = do
   (envl, lv) <- evalAST env x
-  a <- evalAST envl $ CompoundNode xs
+  let ll = case lv of ReturnNode n -> return (envl, n)
+                      _ -> evalAST envl $ CompoundNode xs
+  a <- ll
   return a
 
 evalAST env (IntValueNode x) = do
@@ -65,13 +71,29 @@ evalAST env (SimpleNode l) = do
   return x
 
 evalAST env (CallNode name params) = do
+  ps <- evalParams env params
   let Just (FunctionNode aaa args ast) = Map.lookup name env
-      envLocal = (name, ast):(zipWith (\x y -> (x, y)) args params)
-  x <- evalAST (Map.fromList envLocal) ast
-  return x
+      envLocal = (name, FunctionNode name args ast):(zipWith (\x y -> (x, y)) args ps)
+  (e, x) <- evalAST (Map.fromList envLocal) ast
+  let val = case x of ReturnNode y -> y
+                      ys -> ys
+  return (env, x)
+
 
 evalAST env EmptyNode = do
   return (env, EmptyNode)
+
+evalAST env (ReturnNode x) = do
+  (e, val) <- evalAST env x
+  return (e, ReturnNode val)
+
+evalParams env [] = do
+  return []
+
+evalParams env (p:params) = do
+  (envr, pp) <- evalAST env p
+  ps <- evalParams env params
+  return (pp:ps)
 
 eval xs = do
   evalAST (Map.fromList []) $ parse xs
