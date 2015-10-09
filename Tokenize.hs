@@ -13,12 +13,16 @@ data Token = IntToken Int
            | KeywordDoToken
            | KeywordEndToken
            | KeywordDefToken
+           | KeywordIfToken
+           | KeywordThenToken
+           | ReturnToken
            | DoubleQuotationToken
            | AssignOpToken
            | AddOpToken
            | SubOpToken
            | MulOpToken
            | DivOpToken
+           | EqOpToken
            | CommaToken
            | SpaceToken
            | EmptyToken
@@ -29,6 +33,7 @@ data Token = IntToken Int
 
 tokenize :: String -> [Token]
 tokenize [] = [NewLineToken]
+tokenize ('=':'=':xs) = EqOpToken:tokenize(xs)
 tokenize ('(':xs)  = ParenthesisBeginToken:tokenize(xs)
 tokenize (')':xs)  = ParenthesisEndToken:tokenize(xs)
 tokenize ('\"':xs) = DoubleQuotationToken:tokenize(xs)
@@ -39,9 +44,12 @@ tokenize ('-':xs)  = SubOpToken:tokenize(xs)
 tokenize ('*':xs)  = MulOpToken:tokenize(xs)
 tokenize ('/':xs)  = DivOpToken:tokenize(xs)
 tokenize (',':xs)  = CommaToken:tokenize(xs)
-tokenize ('d':'e':'f':xs) = KeywordDefToken:tokenize(xs)
-tokenize ('d':'o':xs)     = KeywordDoToken:tokenize(xs)
-tokenize ('e':'n':'d':xs) = KeywordEndToken:tokenize(xs)
+tokenize ('d':'e':'f':xs)     = KeywordDefToken:tokenize(xs)
+tokenize ('i':'f':xs)         = KeywordIfToken:tokenize(xs)
+tokenize ('t':'h':'e':'n':xs) = KeywordThenToken:tokenize(xs)
+tokenize ('d':'o':xs)         = KeywordDoToken:tokenize(xs)
+tokenize ('e':'n':'d':xs)     = KeywordEndToken:tokenize(xs)
+tokenize ('r':'e':'t':'u':'r':'n':xs) = ReturnToken:tokenize(xs)
 tokenize (' ':xs)  = tokenize(xs)
 tokenize xxs@(x:_)
   | isDigit x = IntToken (read intString::Int):tokenize(beforeDigit)

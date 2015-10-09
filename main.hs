@@ -16,6 +16,9 @@ evalAST env (CompoundNode (x:xs)) = do
 evalAST env (IntValueNode x) = do
   return (env, IntValueNode x)
 
+evalAST env (BoolValueNode x) = do
+  return (env, BoolValueNode x)
+
 evalAST env (AssignNode (IdentNode name) r) = do
   (envr, IntValueNode rv) <- evalAST env r
   return (Map.insert name (IntValueNode rv) envr, IntValueNode rv)
@@ -26,6 +29,11 @@ evalAST env (IdentNode name) = do
 
 evalAST env (DefineFunctionNode name args ast) = do
   return (Map.insert name (FunctionNode name args ast) env, FunctionNode name args ast)
+
+evalAST env (IfNode conditionAST thenAST elseAST) = do
+  (_, BoolValueNode condition) <- evalAST env conditionAST
+  x <- if condition then evalAST env thenAST else evalAST env elseAST
+  return x
 
 evalAST env (AddNode l r) = do
   (envl, IntValueNode lv) <- evalAST env  l
@@ -46,6 +54,11 @@ evalAST env (DivNode l r) = do
   (envl, IntValueNode lv) <- evalAST env  l
   (envr, IntValueNode rv) <- evalAST envl r
   return (envr, IntValueNode $ div lv rv)
+
+evalAST env (EqNode l r) = do
+  (envl, IntValueNode lv) <- evalAST env  l
+  (envr, IntValueNode rv) <- evalAST envl r
+  return (envr, BoolValueNode $ lv == rv)
 
 evalAST env (SimpleNode l) = do
   x <- evalAST env l

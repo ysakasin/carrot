@@ -29,11 +29,14 @@ data AST = SimpleNode AST
          | SubNode AST AST
          | MulNode AST AST
          | DivNode AST AST
+         | EqNode AST AST
          | IntValueNode Int
+         | BoolValueNode Bool
          | IdentNode String
          | CompoundNode [AST]
          | DefineFunctionNode String [String] AST
          | FunctionNode String [String] AST
+         | IfNode AST AST AST
          | EmptyNode
          | CallNode String [AST]
   deriving (Show)
@@ -54,7 +57,7 @@ searchPEndToken (t:ts) = (t:token, beforeToken)
 
 parseStatements :: [Token] -> (AST, [Token])
 parseStatements [] = (CompoundNode [], [])
-parseStatements (KeywordEndToken:ts) = (CompoundNode [], ts)
+parseStatements (KeywordEndToken:NewLineToken:ts) = (CompoundNode [], ts)
 parseStatements ts = (CompoundNode $ ast:asts, afterTs)
   where (ast, after) = parseStatement [] ts
         (CompoundNode asts, afterTs) = parseStatements after
@@ -62,10 +65,16 @@ parseStatements ts = (CompoundNode $ ast:asts, afterTs)
 parseStatement :: [Token] -> [Token] -> (AST, [Token])
 parseStatement token (NewLineToken:ts) = (exprAST, ts)
   where exprAST = parseExpression $ reverse token
+parseStatement token (KeywordThenToken:ts) = (exprAST, ts)
+  where exprAST = parseExpression $ reverse token
 parseStatement [] (KeywordDefToken:ts) = (DefineFunctionNode name args stmtsAST, afterTs)
   where IdentToken name:ParenthesisToken argTokens:NewLineToken:stmt = ts
         args = getArgs argTokens
         (stmtsAST, afterTs) = parseStatements stmt
+parseStatement [] (KeywordIfToken:ts) = (IfNode conditionAST stmtsAST EmptyNode, afterIf)
+  where (conditionExpr, KeywordThenToken:afterTs) = break (\x -> KeywordThenToken == x || NewLineToken == x) ts
+        conditionAST = parseExpression conditionExpr
+        (stmtsAST, afterIf) = parseStatements afterTs
 parseStatement token (t:ts) = parseStatement (t:token) ts
 
 getArgs :: [Token] -> [String]
@@ -78,8 +87,9 @@ parseExpression ((IdentToken x):AssignOpToken:ts) = AssignNode (IdentNode x) $ p
 parseExpression vs
   | not $ ravl == [] = case x of AddOpToken -> AddNode (parseExpression avl) $ parseTerm avr
                                  SubOpToken -> SubNode (parseExpression avl) $ parseTerm avr
+                                 EqOpToken  -> EqNode  (parseExpression avl) $ parseTerm avr
   | otherwise = parseTerm vs
-  where (ravr, ravl) = break (\x -> AddOpToken == x || SubOpToken == x) $ reverse vs
+  where (ravr, ravl) = break (\x -> AddOpToken == x || SubOpToken == x || EqOpToken == x) $ reverse vs
         x:nravl = ravl
         avl = reverse nravl
         avr = reverse ravr
