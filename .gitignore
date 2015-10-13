@@ -1,6 +1,4 @@
-
 *.o
-
 *.hi
-
+test.cr
 main
