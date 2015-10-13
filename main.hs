@@ -1,4 +1,5 @@
 import Eval
+import Parse
 import System.Environment(getArgs)
 
 main = do

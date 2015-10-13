@@ -75,6 +75,11 @@ evalAST env (SimpleNode l) = do
   x <- evalAST env l
   return x
 
+evalAST env (CallNode "puts" (param:a)) = do
+  (envv, v) <- evalAST env param
+  print v
+  return (envv, v)
+
 evalAST env (CallNode name params) = do
   ps <- evalParams env params
   let Just (FunctionNode aaa args ast) = Map.lookup name env
