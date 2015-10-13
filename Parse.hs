@@ -114,6 +114,8 @@ parsePrimaryExpression (IdentToken x:ParenthesisToken y:[]) = CallNode x paramsA
   where paramsAST = getParams y
 parsePrimaryExpression [IdentToken x] = IdentNode x
 parsePrimaryExpression [ParenthesisToken x] = parseExpression x
+parsePrimaryExpression [TrueToken] = BoolValueNode True
+parsePrimaryExpression [FalseToken] = BoolValueNode False
 parsePrimaryExpression [] = EmptyNode
 parsePrimaryExpression _ = error "Parse Error"
 

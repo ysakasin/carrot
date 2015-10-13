@@ -25,6 +25,8 @@ data Token = IntToken Int
            | EqOpToken
            | CommaToken
            | SpaceToken
+           | TrueToken
+           | FalseToken
            | EmptyToken
            | NewLineToken
            | ArgsToken [String]
@@ -49,6 +51,8 @@ tokenize ('i':'f':xs)         = KeywordIfToken:tokenize(xs)
 tokenize ('t':'h':'e':'n':xs) = KeywordThenToken:tokenize(xs)
 tokenize ('d':'o':xs)         = KeywordDoToken:tokenize(xs)
 tokenize ('e':'n':'d':xs)     = KeywordEndToken:tokenize(xs)
+tokenize ('t':'r':'u':'e':xs)     = TrueToken:tokenize(xs)
+tokenize ('f':'a':'l':'s':'e':xs) = FalseToken:tokenize(xs)
 tokenize ('r':'e':'t':'u':'r':'n':xs) = ReturnToken:tokenize(xs)
 tokenize (' ':xs)  = tokenize(xs)
 tokenize xxs@(x:_)
