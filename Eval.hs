@@ -1,3 +1,8 @@
+module Eval
+(
+  eval
+) where
+
 import Parse
 import Tokenize
 import qualified Data.Map as Map
