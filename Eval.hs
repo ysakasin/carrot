@@ -13,13 +13,9 @@ evalAST env (CompoundNode (x:[])) = do
   a <- evalAST env x
   return a
 
-evalAST env (CompoundNode ((ReturnNode n):xs)) = do
-  (enva, a) <- evalAST env n
-  return (enva, ReturnNode a)
-
 evalAST env (CompoundNode (x:xs)) = do
   (envl, lv) <- evalAST env x
-  let ll = case lv of ReturnNode n -> return (envl, n)
+  let ll = case lv of ReturnNode n -> return (envl, ReturnNode n)
                       _ -> evalAST envl $ CompoundNode xs
   a <- ll
   return a
@@ -87,7 +83,7 @@ evalAST env (CallNode name params) = do
   (e, x) <- evalAST (Map.fromList envLocal) ast
   let val = case x of ReturnNode y -> y
                       ys -> ys
-  return (env, x)
+  return (env, val)
 
 
 evalAST env EmptyNode = do
