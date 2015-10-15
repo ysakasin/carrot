@@ -59,6 +59,7 @@ searchPEndToken (t:ts) = (t:token, beforeToken)
 parseStatements :: [Token] -> (AST, [Token])
 parseStatements [] = (CompoundNode [], [])
 parseStatements (KeywordEndToken:NewLineToken:ts) = (CompoundNode [], ts)
+parseStatements tss@(KeywordElseToken:_) = (CompoundNode [], tss)
 parseStatements ts = (CompoundNode $ ast:asts, afterTs)
   where (ast, after) = parseStatement [] ts
         (CompoundNode asts, afterTs) = parseStatements after
@@ -72,10 +73,13 @@ parseStatement [] (KeywordDefToken:ts) = (DefineFunctionNode name args stmtsAST,
   where IdentToken name:ParenthesisToken argTokens:NewLineToken:stmt = ts
         args = getArgs argTokens
         (stmtsAST, afterTs) = parseStatements stmt
-parseStatement [] (KeywordIfToken:ts) = (IfNode conditionAST stmtsAST EmptyNode, afterIf)
+parseStatement [] (KeywordIfToken:ts) = (IfNode conditionAST stmtsAST elseStmtsAST, afterElse)
   where (conditionExpr, KeywordThenToken:afterTs) = break (\x -> KeywordThenToken == x || NewLineToken == x) ts
         conditionAST = parseExpression conditionExpr
         (stmtsAST, afterIf) = parseStatements afterTs
+        afterhead:aaa = afterIf
+        _:bbb = aaa
+        (elseStmtsAST, afterElse) = if afterhead == KeywordElseToken then parseStatements bbb else (EmptyNode, afterIf)
 parseStatement [] (ReturnToken:ts) = (ReturnNode ast, after)
   where ast = parseExpression r
         (r, after) = break (NewLineToken ==) ts

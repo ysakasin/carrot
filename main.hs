@@ -1,5 +1,6 @@
 import Eval
 import Parse
+import Tokenize
 import System.Environment(getArgs)
 
 main = do

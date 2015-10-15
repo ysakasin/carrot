@@ -14,6 +14,7 @@ data Token = IntToken Int
            | KeywordEndToken
            | KeywordDefToken
            | KeywordIfToken
+           | KeywordElseToken
            | KeywordThenToken
            | ReturnToken
            | DoubleQuotationToken
@@ -48,6 +49,7 @@ tokenize ('/':xs)  = DivOpToken:tokenize(xs)
 tokenize (',':xs)  = CommaToken:tokenize(xs)
 tokenize ('d':'e':'f':xs)     = KeywordDefToken:tokenize(xs)
 tokenize ('i':'f':xs)         = KeywordIfToken:tokenize(xs)
+tokenize ('e':'l':'s':'e':xs) = KeywordElseToken:tokenize(xs)
 tokenize ('t':'h':'e':'n':xs) = KeywordThenToken:tokenize(xs)
 tokenize ('d':'o':xs)         = KeywordDoToken:tokenize(xs)
 tokenize ('e':'n':'d':xs)     = KeywordEndToken:tokenize(xs)
