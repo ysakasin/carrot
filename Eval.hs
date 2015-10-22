@@ -73,7 +73,10 @@ evalAST env (SimpleNode l) = do
 
 evalAST env (CallNode "puts" (param:a)) = do
   (envv, v) <- evalAST env param
-  print v
+  let putv = case v of IntValueNode n -> show n
+                       BoolValueNode b -> show b
+                       x -> show x
+  putStrLn putv
   return (envv, v)
 
 evalAST env (CallNode name params) = do
