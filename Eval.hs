@@ -5,67 +5,72 @@ module Eval
 
 import Parse
 import Tokenize
+import Object
+import AST
 import qualified Data.Map as Map
 
 type Environment = Map.Map String AST
 
 evalAST env (CompoundNode (x:[])) = do
-  a <- evalAST env x
-  return a
+  ll <- evalAST env x
+  return ll
 
 evalAST env (CompoundNode (x:xs)) = do
   (envl, lv) <- evalAST env x
-  let ll = case lv of ReturnNode n -> return (envl, ReturnNode n)
+  let ll = case lv of Return obj -> return (envl, Return obj)
                       _ -> evalAST envl $ CompoundNode xs
   a <- ll
   return a
 
-evalAST env (IntValueNode x) = do
-  return (env, IntValueNode x)
+evalAST env (IntLitNode x) = do
+  return (env, genIntObject x)
 
-evalAST env (BoolValueNode x) = do
-  return (env, BoolValueNode x)
+evalAST env (BoolLitNode x) = do
+  return (env, genBoolObject x)
 
 evalAST env (AssignNode (IdentNode name) r) = do
-  (envr, IntValueNode rv) <- evalAST env r
-  return (Map.insert name (IntValueNode rv) envr, IntValueNode rv)
+  (envr, obj) <- evalAST env r
+  return (Map.insert name obj envr, obj)
 
 evalAST env (IdentNode name) = do
-  let Just value = Map.lookup name env
-  return (env, value)
+  let obj = case Map.lookup name env of Just o -> o
+                                        Nothing -> genNilObject
+  return (env, obj)
 
 evalAST env (DefineFunctionNode name args ast) = do
-  return (Map.insert name (FunctionNode name args ast) env, FunctionNode name args ast)
+  let func = genFunctionObject args ast
+  return (Map.insert name func env, func)
 
 evalAST env (IfNode conditionAST thenAST elseAST) = do
-  (_, BoolValueNode condition) <- evalAST env conditionAST
-  x <- if condition then evalAST env thenAST else evalAST env elseAST
+  (_, obj) <- evalAST env conditionAST
+  let BoolValue b = value obj
+  x <- if b then evalAST env thenAST else evalAST env elseAST
   return x
 
 evalAST env (AddNode l r) = do
-  (envl, IntValueNode lv) <- evalAST env  l
-  (envr, IntValueNode rv) <- evalAST envl r
-  return (envr, IntValueNode (lv + rv))
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "+" [rv])
 
 evalAST env (SubNode l r) = do
-  (envl, IntValueNode lv) <- evalAST env  l
-  (envr, IntValueNode rv) <- evalAST envl r
-  return (envr, IntValueNode $ lv - rv)
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "-" [rv])
 
 evalAST env (MulNode l r) = do
-  (envl, IntValueNode lv) <- evalAST env  l
-  (envr, IntValueNode rv) <- evalAST envl r
-  return (envr, IntValueNode $ lv * rv)
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "*" [rv])
 
 evalAST env (DivNode l r) = do
-  (envl, IntValueNode lv) <- evalAST env  l
-  (envr, IntValueNode rv) <- evalAST envl r
-  return (envr, IntValueNode $ div lv rv)
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "/" [rv])
 
 evalAST env (EqNode l r) = do
-  (envl, IntValueNode lv) <- evalAST env  l
-  (envr, IntValueNode rv) <- evalAST envl r
-  return (envr, BoolValueNode $ lv == rv)
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "==" [rv])
 
 evalAST env (SimpleNode l) = do
   x <- evalAST env l
@@ -73,28 +78,26 @@ evalAST env (SimpleNode l) = do
 
 evalAST env (CallNode "puts" (param:a)) = do
   (envv, v) <- evalAST env param
-  let putv = case v of IntValueNode n -> show n
-                       BoolValueNode b -> show b
-                       x -> show x
-  putStrLn putv
+  putStrLn $ show v
   return (envv, v)
 
 evalAST env (CallNode name params) = do
+  let Just func = Map.lookup name env
   ps <- evalParams env params
-  let Just (FunctionNode aaa args ast) = Map.lookup name env
-      envLocal = (name, FunctionNode name args ast):(zipWith (\x y -> (x, y)) args ps)
-  (e, x) <- evalAST (Map.fromList envLocal) ast
-  let val = case x of ReturnNode y -> y
-                      ys -> ys
-  return (env, val)
-
+  let ASTValue args ast = value func
+  let paramList = Map.fromList $ zipWith (\x y -> (x, y)) args ps
+  let envLocal = Map.union paramList env
+  (envl, lv) <- evalAST envLocal ast
+  let obj = case lv of Return o -> o
+                       x -> x
+  return (env, obj)
 
 evalAST env EmptyNode = do
-  return (env, EmptyNode)
+  return (env, genNilObject)
 
 evalAST env (ReturnNode x) = do
-  (e, val) <- evalAST env x
-  return (e, ReturnNode val)
+  (env, obj) <- evalAST env x
+  return (env, Return obj)
 
 evalParams env [] = do
   return []

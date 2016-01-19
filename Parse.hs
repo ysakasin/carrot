@@ -1,46 +1,14 @@
 module Parse
 (
-  AST(..),
   parse
 ) where
 
 import Tokenize
+import Object
+import AST
 
 import qualified Data.Map as Map
 
-data PrimaryExpression = PrimaryInt Int
-                       | Ident String
-                       | PrimaryParenthesis Expression
-  deriving (Show)
-
-data Term = SimpleTerm PrimaryExpression
-          | MulTerm PrimaryExpression Term
-          | DivTerm PrimaryExpression Term
-  deriving (Show)
-
-data Expression = AddExpression Term Expression
-                | SubExpression Term Expression
-                | SimpleExpression Term
-  deriving (Show)
-
-data AST = SimpleNode AST
-         | AssignNode AST AST
-         | AddNode AST AST
-         | SubNode AST AST
-         | MulNode AST AST
-         | DivNode AST AST
-         | EqNode AST AST
-         | IntValueNode Int
-         | BoolValueNode Bool
-         | IdentNode String
-         | CompoundNode [AST]
-         | DefineFunctionNode String [String] AST
-         | FunctionNode String [String] AST
-         | IfNode AST AST AST
-         | EmptyNode
-         | CallNode String [AST]
-         | ReturnNode AST
-  deriving (Show)
 
 tokenizePrimaryToken :: [Token] -> [Token]
 tokenizePrimaryToken (ParenthesisBeginToken:ts) = (ParenthesisToken inner):(tokenizePrimaryToken outer)
@@ -113,13 +81,13 @@ parseTerm ts
         avr = reverse ravr
 
 parsePrimaryExpression :: [Token] -> AST
-parsePrimaryExpression [IntToken x] = IntValueNode x
+parsePrimaryExpression [IntToken x] = IntLitNode x
 parsePrimaryExpression (IdentToken x:ParenthesisToken y:[]) = CallNode x paramsAST
   where paramsAST = getParams y
 parsePrimaryExpression [IdentToken x] = IdentNode x
 parsePrimaryExpression [ParenthesisToken x] = parseExpression x
-parsePrimaryExpression [TrueToken] = BoolValueNode True
-parsePrimaryExpression [FalseToken] = BoolValueNode False
+parsePrimaryExpression [TrueToken] = BoolLitNode True
+parsePrimaryExpression [FalseToken] = BoolLitNode False
 parsePrimaryExpression [] = EmptyNode
 parsePrimaryExpression _ = error "Parse Error"
 
