@@ -5,15 +5,15 @@ A Ruby like programing language implemented by Haskell
 ## Compile
 
 ```sh
-$ ghc main.hs
+$ stack build
 ```
 
 ## Usage
 
 ```sh
-$ ./main <input>
+$ stack build carrot <input>
 ```
 
 ```sh
-$ ./main fib.cr
+$ stack build carrot fib.cr
 ```

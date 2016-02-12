@@ -1,0 +1,43 @@
+name:                carrot
+version:             0.1.0.0
+synopsis:            A Ruby like programing language implemented by Haskell(experimental)
+description:         Please see README.md
+homepage:            http://github.com/NKMR6194/carrot
+license:             MIT
+license-file:        LICENSE
+author:              SAKATA Sinji
+maintainer:          contact@sinjis-view.mydns.jp
+copyright:           2016 SAKATA Sinji
+category:            Programming language
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     AST, Eval, Object, Parse, Tokenize
+  build-depends:       base >= 4.7 && < 5
+                     , containers
+  default-language:    Haskell2010
+
+executable carrot
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , carrot
+                     , trifecta
+  default-language:    Haskell2010
+
+test-suite carrot-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , carrot
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/NKMR6194/carrot
