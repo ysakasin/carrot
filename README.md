@@ -11,9 +11,9 @@ $ stack build
 ## Usage
 
 ```sh
-$ stack build carrot <input>
+$ stack exec carrot <input>
 ```
 
 ```sh
-$ stack build carrot fib.cr
+$ stack exec carrot fib.cr
 ```
