@@ -60,6 +60,7 @@ getArgs ((IdentToken x):CommaToken:ts) = x:(getArgs ts)
 
 parseExpression :: [Token] -> AST
 parseExpression ((IdentToken x):AssignOpToken:ts) = AssignNode (IdentNode x) $ parseExpression ts
+parseExpression ts@(SubOpToken:_) = parseTerm ts
 parseExpression vs
   | not $ ravl == [] = case x of AddOpToken -> AddNode (parseExpression avl) $ parseTerm avr
                                  SubOpToken -> SubNode (parseExpression avl) $ parseTerm avr
@@ -73,7 +74,7 @@ parseExpression vs
 parseTerm :: [Token] -> AST
 parseTerm ts
   | not $ ravl == [] = case x of MulOpToken -> MulNode (parseTerm avl) $ parsePrimaryExpression avr
-                                 SubOpToken -> DivNode (parseTerm avl) $ parsePrimaryExpression avr
+                                 DivOpToken -> DivNode (parseTerm avl) $ parsePrimaryExpression avr
   | otherwise = parsePrimaryExpression ts
   where (ravr, ravl) = break (\x -> MulOpToken == x || DivOpToken == x) $ reverse ts
         x:nravl = ravl
@@ -81,6 +82,7 @@ parseTerm ts
         avr = reverse ravr
 
 parsePrimaryExpression :: [Token] -> AST
+parsePrimaryExpression (SubOpToken:IntToken x:[]) = IntLitNode $ negate x
 parsePrimaryExpression [IntToken x] = IntLitNode x
 parsePrimaryExpression (IdentToken x:ParenthesisToken y:[]) = CallNode x paramsAST
   where paramsAST = getParams y

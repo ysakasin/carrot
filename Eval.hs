@@ -9,7 +9,7 @@ import Object
 import AST
 import qualified Data.Map as Map
 
-type Environment = Map.Map String AST
+type Env = Map.Map String Object
 
 evalAST env (CompoundNode (x:[])) = do
   ll <- evalAST env x
@@ -43,7 +43,7 @@ evalAST env (DefineFunctionNode name args ast) = do
 
 evalAST env (IfNode conditionAST thenAST elseAST) = do
   (_, obj) <- evalAST env conditionAST
-  let BoolValue b = value obj
+  let BoolValue b = value $ call obj "true?" []
   x <- if b then evalAST env thenAST else evalAST env elseAST
   return x
 
@@ -87,7 +87,7 @@ evalAST env (CallNode name params) = do
   let ASTValue args ast = value func
   let paramList = Map.fromList $ zipWith (\x y -> (x, y)) args ps
   let envLocal = Map.union paramList env
-  (envl, lv) <- evalAST envLocal ast
+  (_, lv) <- evalAST envLocal ast
   let obj = case lv of Return o -> o
                        x -> x
   return (env, obj)
@@ -108,4 +108,4 @@ evalParams env (p:params) = do
   return (pp:ps)
 
 eval xs = do
-  evalAST (Map.fromList []) $ parse xs
+  evalAST Map.empty $ parse xs

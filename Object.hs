@@ -35,7 +35,11 @@ instance Show Object where
     where stringObj = call obj "to_s" []
           StringValue string = value stringObj
 
-genObject = Object {klass = "Object", value = EmptyValue, methods = Map.fromList [("to_s", toSObject)]}
+genObject = Object {klass = "Object", value = EmptyValue, methods = objMethod}
+  where objMethod = Map.fromList [
+          ("to_s", toSObject),
+          ("true?", toBObject)
+          ]
 
 call :: Object -> String -> [Object] -> Object
 call callie caller args = case looked of Just method -> method callie args
@@ -45,16 +49,25 @@ call callie caller args = case looked of Just method -> method callie args
 toSObject :: Object -> [Object] -> Object
 toSObject self _ = genStringObject $ "#<" ++ (klass self) ++ ">"
 
+toBObject :: Object -> [Object] -> Object
+toBObject _ _ = genBoolObject True
+
 
 -- nil --
 
 genNilObject = Object {klass = "nil", value = EmptyValue, methods = nilMethod}
   where obj = genObject
-        overrides = Map.fromList [("to_s", toSNil)]
+        overrides = Map.fromList [
+          ("to_s", toSNil),
+          ("true?", toBNil)
+          ]
         nilMethod = Map.union overrides $ methods obj
 
 toSNil :: Object -> [Object] -> Object
 toSNil _ _ = genStringObject "nil"
+
+toBNil :: Object -> [Object] -> Object
+toBNil _ _ = genBoolObject False
 
 
 -- Int --
@@ -70,7 +83,8 @@ genIntObject n = Object {klass = "Int", value = IntValue n, methods = intMethod}
           ("*", mulInt),
           ("/", divInt),
           (">", gtInt),
-          ("<", ltInt)
+          ("<", ltInt),
+          ("true?", toBInt)
           ]
         intMethod = Map.union overrides $ methods obj
 
@@ -112,17 +126,28 @@ intBinOp _ _ _ = error "can not add"
 intBoolOp f (IntValue x) (IntValue y) = f x y
 intBoolOp _ _ _ = error "can not add"
 
+toBInt :: Object -> [Object] -> Object
+toBInt self _ = genBoolObject $ n /= 0
+  where IntValue n = value self
+
 
 -- String --
 
 genStringObject :: String -> Object
 genStringObject s = Object {klass = "String", value = StringValue s, methods = stringMethod}
   where obj = genObject
-        overrides = Map.fromList [("to_s", toSString)]
+        overrides = Map.fromList [
+          ("to_s", toSString),
+          ("true?", toBString)
+          ]
         stringMethod = Map.union overrides $ methods obj
 
 toSString :: Object -> [Object] -> Object
 toSString self _ = self
+
+toBString :: Object -> [Object] -> Object
+toBString self _ = genBoolObject $ s /= ""
+  where StringValue s = value self
 
 
 -- Bool --
@@ -130,7 +155,10 @@ toSString self _ = self
 genBoolObject :: Bool -> Object
 genBoolObject b = Object {klass = "Bool", value = BoolValue b, methods = boolMethod}
   where obj = genObject
-        overrides = Map.fromList [("to_s", toSBool)]
+        overrides = Map.fromList [
+          ("to_s", toSBool),
+          ("true?", toBBool)
+          ]
         boolMethod = Map.union overrides $ methods obj
 
 toSBool :: Object -> [Object] -> Object
@@ -139,13 +167,20 @@ toSBool self _ = if val then trueString else falseString
         trueString = genStringObject "true"
         falseString = genStringObject "false"
 
+toBBool :: Object -> [Object] -> Object
+toBBool self _ = self
+
 
 -- Function --
 
 genFunctionObject :: [String] -> AST -> Object
 genFunctionObject args ast = Object {klass = "Function", value = ASTValue args ast, methods = functionMethod}
   where obj = genObject
-        overrides = Map.fromList [("to_s", toSFunction), ("call", callFunction)]
+        overrides = Map.fromList [
+          ("to_s", toSFunction),
+          ("call", callFunction),
+          ("true?", toBFunction)
+          ]
         functionMethod = Map.union overrides $ methods obj
 
 toSFunction :: Object -> [Object] -> Object
@@ -153,3 +188,6 @@ toSFunction self _ = genStringObject $ klass self
 
 callFunction :: Object -> [Object] -> Object
 callFunction self args = self
+
+toBFunction :: Object -> [Object] -> Object
+toBFunction _ _ = genBoolObject True

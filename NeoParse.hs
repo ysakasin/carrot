@@ -1,4 +1,5 @@
 import Tokenize
+--import Object
 
 type TokenList = [Token]
 
@@ -102,4 +103,5 @@ parseProgram :: TokenList -> (Program, TokenList)
 parseProgram tokens = (Program stmts, ts)
   where (stmts, ts) = parseStatementList tokens
 
-parse string = parseProgram $ tokenize string
+parse string = if ts == [] then program else error "parse error"
+  where (program, ts) = parseProgram $ tokenize string
