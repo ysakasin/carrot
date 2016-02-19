@@ -10,7 +10,7 @@ data AST = SimpleNode AST
          | MulNode AST AST
          | DivNode AST AST
          | EqNode AST AST
-         | IntLitNode Int
+         | IntLitNode Integer
          | BoolLitNode Bool
          | IdentNode String
          | CompoundNode [AST]

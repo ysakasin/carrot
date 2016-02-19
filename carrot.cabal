@@ -15,9 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     AST, Eval, Object, Parse, Tokenize
+  exposed-modules:     AST, Eval, Object, Parser
   build-depends:       base >= 4.7 && < 5
                      , containers
+                     , trifecta
+                     , parsers
+                     , unordered-containers
+                     , ansi-wl-pprint
   default-language:    Haskell2010
 
 executable carrot

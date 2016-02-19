@@ -3,11 +3,12 @@ module Eval
   eval
 ) where
 
-import Parse
-import Tokenize
+import Parser
 import Object
 import AST
 import qualified Data.Map as Map
+import Text.Trifecta
+import Text.PrettyPrint.ANSI.Leijen(putDoc)
 
 type Env = Map.Map String Object
 
@@ -107,5 +108,12 @@ evalParams env (p:params) = do
   ps <- evalParams env params
   return (pp:ps)
 
-eval xs = do
-  evalAST Map.empty $ parse xs
+eval xs =
+  case parse xs of
+    Failure doc -> do
+      putDoc doc
+      putStrLn "Parse error."
+    Success ast -> do
+      -- print ast
+      a <- evalAST Map.empty ast
+      return ()

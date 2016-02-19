@@ -16,7 +16,7 @@ import qualified Data.Map as Map
 
 type Env = Map.Map String Object
 
-data Value = IntValue Int
+data Value = IntValue Integer
            | StringValue String
            | BoolValue Bool
            | ArrayValue [Object]
@@ -72,7 +72,7 @@ toBNil _ _ = genBoolObject False
 
 -- Int --
 
-genIntObject :: Int -> Object
+genIntObject :: Integer -> Object
 genIntObject n = Object {klass = "Int", value = IntValue n, methods = intMethod}
   where obj = genObject
         overrides = Map.fromList [
