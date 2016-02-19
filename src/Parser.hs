@@ -33,13 +33,33 @@ ifStatement = do
   symbol "then"
   thenStmts <- statements
   elseStmts <- optional $ do
-    symbol "else"
-    s <- statements
+    s <- elsifStatement <|> elseStatement
+    -- s <- elsifStatement
     return s
   symbol "end"
   case elseStmts of
     Nothing -> return $ IfNode condition thenStmts EmptyNode
     Just es -> return $ IfNode condition thenStmts es
+
+elsifStatement :: Parser AST
+elsifStatement = do
+  symbol "elsif"
+  condition <- expression
+  symbol "then"
+  thenStmts <- statements
+  elseStmts <- optional $ do
+    s <- elsifStatement <|> elseStatement
+    -- s <- elseStatement
+    return s
+  case elseStmts of
+    Nothing -> return $ IfNode condition thenStmts EmptyNode
+    Just es -> return $ IfNode condition thenStmts es
+
+elseStatement :: Parser AST
+elseStatement = do
+  symbol "else"
+  stmts <- statements
+  return stmts
 
 defineFunctionStatement :: Parser AST
 defineFunctionStatement = do
@@ -100,7 +120,7 @@ carrotIdents = IdentifierStyle
   { _styleName     = "identifier"
   , _styleStart    = letter <|> char '_'
   , _styleLetter   = alphaNum <|> oneOf "_'"
-  , _styleReserved = set ["if", "else", "then", "end", "do", "def", "return"]
+  , _styleReserved = set ["if", "elsif", "else", "then", "end", "do", "def", "return"]
   , _styleHighlight = Identifier
   , _styleReservedHighlight = ReservedIdentifier
   }
