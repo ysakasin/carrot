@@ -73,6 +73,26 @@ evalAST env (EqNode l r) = do
   (envr, rv) <- evalAST envl r
   return (envr, Object.call lv "==" [rv])
 
+evalAST env (LessNode l r) = do
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv ">" [rv])
+
+evalAST env (MoreNode l r) = do
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "<" [rv])
+
+evalAST env (AndLessNode l r) = do
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv ">=" [rv])
+
+evalAST env (AndMoreNode l r) = do
+  (envl, lv) <- evalAST env  l
+  (envr, rv) <- evalAST envl r
+  return (envr, Object.call lv "<=" [rv])
+
 evalAST env (SimpleNode l) = do
   x <- evalAST env l
   return x

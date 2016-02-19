@@ -10,6 +10,10 @@ data AST = SimpleNode AST
          | MulNode AST AST
          | DivNode AST AST
          | EqNode AST AST
+         | LessNode AST AST
+         | MoreNode AST AST
+         | AndLessNode AST AST
+         | AndMoreNode AST AST
          | IntLitNode Integer
          | BoolLitNode Bool
          | IdentNode String

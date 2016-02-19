@@ -59,12 +59,15 @@ returnStatement = do
   return $ ReturnNode e
 
 eqop  = do{ symbol "=="; return EqNode } <|> do{ symbol "="; return AssignNode }
+cmpop = do{ symbol ">="; return AndLessNode } <|> do{ symbol "<="; return AndMoreNode }
+        <|> do{ symbol ">"; return LessNode } <|> do{ symbol "<"; return MoreNode }
 mulop = do{ symbol "*"; return MulNode } <|> do{ symbol "/"; return DivNode }
 addop = do{ symbol "+"; return AddNode } <|> do{ symbol "-"; return SubNode }
 
 -- expression = eqexpr <|> assignExpr
 expression = eqexpr
-eqexpr  = expr   `chainl1` eqop
+eqexpr  = cmpexpr `chainl1` eqop
+cmpexpr = expr   `chainl1` cmpop
 expr    = term   `chainl1` addop
 term    = factor `chainl1` mulop
 factor  = parens expr <|> intLiteral <|> callExpression

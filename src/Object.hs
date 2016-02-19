@@ -84,6 +84,8 @@ genIntObject n = Object {klass = "Int", value = IntValue n, methods = intMethod}
           ("/", divInt),
           (">", gtInt),
           ("<", ltInt),
+          (">=", agtInt),
+          ("<=", altInt),
           ("true?", toBInt)
           ]
         intMethod = Map.union overrides $ methods obj
@@ -119,6 +121,14 @@ gtInt self [right] = genBoolObject b
 ltInt :: Object -> [Object] -> Object
 ltInt self [right] = genBoolObject b
   where b = intBoolOp (<) (value self) (value right)
+
+agtInt :: Object -> [Object] -> Object
+agtInt self [right] = genBoolObject b
+  where b = intBoolOp (>=) (value self) (value right)
+
+altInt :: Object -> [Object] -> Object
+altInt self [right] = genBoolObject b
+  where b = intBoolOp (<=) (value self) (value right)
 
 intBinOp f (IntValue x) (IntValue y) = f x y
 intBinOp _ _ _ = error "can not add"
